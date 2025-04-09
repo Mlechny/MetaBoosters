@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}MetaBoosters{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+</head>
+<body>
+    <header class="container-fluid p-3 mb-3 bg-light">
+        <div class="row align-items-center">
+            <div class="col-md-2">
+                <img src="{% static 'img/some_logo.jpeg' %}" alt="Logo" style="max-width: 100px;">
+            </div>
+            <div class="col-md-6">
+                <form class="d-flex" role="search">
+                    <input class="form-control me-2" type="search" placeholder="Поиск" style="height: 38px;">
+                    <button class="btn btn-outline-success" type="submit" style="height: 38px;">Поиск</button>
+                </form>
+            </div>
+            <div class="col-md-4 text-end">
+                {% if user.is_authenticated %}
+                    Привет, {{ user.username }} |
+                    <a href="{% url 'settings' %}">Настройки</a> |
+                    <a href="#">Выйти</a>
+                {% else %}
+                    <a class="btn btn-primary me-1" href="{% url 'login' %}">Войти</a>
+                    <a class="btn btn-secondary" href="{% url 'signup' %}">Регистрация</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="row">
+            <div class="col-md-8">
+                {% block content %}{% endblock %}
+            </div>
+            <aside class="col-md-4">
+                <h5>Правый блок</h5>
+                <p>Популярные теги:</p>
+                <span class="badge bg-light border text-dark">Схемы</span>
+                <span class="badge bg-light border text-dark">Состав</span>
+                <span class="badge bg-light border text-dark">События</span>
+            </aside>
+        </div>
+    </main>
+
+    <footer class="container-fluid text-center bg-light mt-4 p-3">
+        <small>&copy; 2025 MetaBoosters</small>
+    </footer>
+</body>
+</html>

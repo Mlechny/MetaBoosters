@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+
+{% block title %}Вопросы по тегу {{ tag_name }}{% endblock %}
+
+{% block content %}
+<h2>Тег: <span class="badge bg-info">{{ tag_name }}</span></h2>
+{% include 'question_list.html' %}
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}Задать вопрос{% endblock %}
+
+{% block content %}
+<h2>Задать вопрос</h2>
+
+<div class="alert alert-danger">Пожалуйста, исправьте ошибки при заполнении формы.</div>
+
+<form method="post" action="#">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="title" class="form-label">Заголовок</label>
+        <input type="text" class="form-control" name="title" id="title">
+    </div>
+    <div class="mb-3">
+        <label for="text" class="form-label">Текст</label>
+        <textarea class="form-control" name="text" id="text" rows="5"></textarea>
+    </div>
+    <div class="mb-3">
+        <label for="tags" class="form-label">Теги (через запятую)</label>
+        <input type="text" class="form-control" name="tags" id="tags">
+    </div>
+    <button class="btn btn-success" type="submit">Отправить</button>
+</form>
+{% endblock %}

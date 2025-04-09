@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Вопрос #{{ question.id }}{% endblock %}
+
+{% block content %}
+<h2>{{ question.title }}</h2>
+<p>{{ question.text }}</p>
+
+<p>
+    {% for tag in question.tags %}
+        <span class="badge bg-info me-1">{{ tag }}</span>
+    {% endfor %}
+</p>
+
+<hr>
+<h4>Ответы</h4>
+{% for ans in question.answers %}
+<div class="border p-3 mb-2">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+            <label>
+                <input type="checkbox" {% if ans.is_correct %}checked{% endif %} disabled>
+            </label>
+            <strong>Правильный ответ</strong>
+        </div>
+        <div>
+            <button class="btn btn-outline-success btn-sm">+</button>
+            <span class="mx-1">10</span>
+            <button class="btn btn-outline-danger btn-sm">−</button>
+        </div>
+    </div>
+    <p>{{ ans.text }}</p>
+</div>
+{% empty %}
+<p>Ответов пока нет.</p>
+{% endfor %}
+
+<hr>
+<h4>Ваш ответ</h4>
+{% if form.errors %}
+  <div class="alert alert-danger">Пожалуйста, исправьте ошибки в форме.</div>
+{% endif %}
+<form method="post" action="#">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label>
+            <textarea class="form-control" name="answer" rows="3"></textarea>
+        </label>
+    </div>
+    <button class="btn btn-primary" type="submit">Отправить</button>
+</form>
+{% endblock %}

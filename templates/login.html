@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Вход{% endblock %}
+
+{% block content %}
+<h2>Вход</h2>
+
+<div class="alert alert-danger">Неверные данные. Попробуйте снова.</div>
+
+<form method="post" action="#">
+    <div class="mb-3">
+        <label for="username" class="form-label">Имя пользователя</label>
+        <input type="text" class="form-control" name="username" id="username">
+    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Пароль</label>
+        <input type="password" class="form-control" name="password" id="password">
+    </div>
+    <button class="btn btn-primary" type="submit">Войти</button>
+</form>
+{% endblock %}
