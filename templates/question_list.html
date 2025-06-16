@@ -1,49 +1,46 @@
 {% for question in page_obj.object_list %}
 <div class="card mb-3">
-  <div class="card-body">
-    <div class="d-flex justify-content-between align-items-start flex-wrap">
-      <h5 class="mb-1 me-3">
+  <div class="card-body d-flex">
+
+    {# квадратный аватар 96×96 px #}
+    {% if question.author.profile.avatar %}
+      <img src="{{ question.author.profile.avatar.url }}"
+           alt="avatar"
+           width="96" height="96"
+           style="margin-right:1.5rem;">
+    {% endif %}
+
+    <div style="flex:1">
+      <h5 class="mb-1">
         <a href="{% url 'question_detail' question.id %}">{{ question.title }}</a>
       </h5>
-      <div class="d-flex justify-content-end flex-wrap gap-2 mb-2">
-        <span class="badge bg-light border text-dark">Схемы</span>
-        <span class="badge bg-light border text-dark">Состав</span>
-        <span class="badge bg-light border text-dark">События</span>
-      </div>
-    </div>
 
-    <p class="mt-2">{{ question.text }}</p>
+      <p class="mt-2">{{ question.text }}</p>
 
-    <div class="d-flex justify-content-between align-items-center mt-3">
-      <div class="d-flex align-items-center gap-2">
-      <div>
-            <button class="btn btn-outline-success btn-sm">+</button>
-            <span class="mx-1">10</span>
-            <button class="btn btn-outline-danger btn-sm">−</button>
+      <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+
+        {# лайки #}
+        <div>
+          <button class="btn btn-outline-success btn-sm">+</button>
+          <span class="mx-1">{{ question.likes.count }}</span>
+          <button class="btn btn-outline-danger btn-sm">−</button>
         </div>
-      </div>
 
-      <div class="text-muted">
-        Ответов: 5
+        {# теги — теперь тут #}
+        <div class="d-flex flex-wrap gap-2">
+          {% for tag in question.tags.all %}
+            <a href="{% url 'tag' tag.name %}" class="badge bg-info text-white">#{{ tag.name }}</a>
+          {% empty %}
+            <span class="text-muted">Нет тегов</span>
+          {% endfor %}
+        </div>
+
+        {# счётчик ответов #}
+        <div class="text-muted ms-auto">
+          Ответов: {{ question.answers.count }}
+        </div>
       </div>
     </div>
   </div>
 </div>
-
 {% endfor %}
-
-<nav aria-label="Page navigation">
-  <ul class="pagination">
-    {% if page_obj.has_previous %}
-      <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Предыдущая</a></li>
-    {% endif %}
-    {% for num in page_obj.paginator.page_range %}
-      <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-      </li>
-    {% endfor %}
-    {% if page_obj.has_next %}
-      <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Следующая</a></li>
-    {% endif %}
-  </ul>
-</nav>

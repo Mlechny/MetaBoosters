@@ -1,21 +1,35 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% block title %}Вход{% endblock %}
 
 {% block content %}
-<h2>Вход</h2>
+<h2 class="mb-4">Вход</h2>
 
-<div class="alert alert-danger">Неверные данные. Попробуйте снова.</div>
+{# отобразим общее сообщение только при наличии ошибок #}
+{% if form.errors %}
+  <div class="alert alert-danger">
+      Неверные данные. Попробуйте снова.
+  </div>
+{% endif %}
 
-<form method="post" action="#">
+<form method="post" action="{% url 'login' %}{% if continue_url %}?continue={{ continue_url|urlencode }}{% endif %}">
+    {% csrf_token %}
+
     <div class="mb-3">
-        <label for="username" class="form-label">Имя пользователя</label>
-        <input type="text" class="form-control" name="username" id="username">
+        <label for="id_username" class="form-label">Имя пользователя</label>
+        {{ form.username }}
+        {% for err in form.username.errors %}
+            <div class="invalid-feedback d-block">{{ err }}</div>
+        {% endfor %}
     </div>
+
     <div class="mb-3">
-        <label for="password" class="form-label">Пароль</label>
-        <input type="password" class="form-control" name="password" id="password">
+        <label for="id_password" class="form-label">Пароль</label>
+        {{ form.password }}
+        {% for err in form.password.errors %}
+            <div class="invalid-feedback d-block">{{ err }}</div>
+        {% endfor %}
     </div>
+
     <button class="btn btn-primary" type="submit">Войти</button>
 </form>
 {% endblock %}

@@ -1,84 +1,109 @@
-from django.shortcuts import render
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.http import Http404
+from django.views.decorators.http import require_http_methods, require_safe
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 
-def paginate(objects_list, request, per_page=10):
-    paginator = Paginator(objects_list, per_page)
-    page_number = request.GET.get('page', 1)  # считываем ?page= из URL
-    try:
-        page = paginator.page(page_number)
-    except PageNotAnInteger:
-        page = paginator.page(1)
-    except EmptyPage:
-        page = paginator.page(paginator.num_pages)
-    return page
+from .models import Question, Tag
+from .forms import LoginForm, SignupForm, AskForm, AnswerForm, ProfileEditForm
+from .utils import paginate
 
+SAFE_REDIRECT = "index"
+
+@require_safe
 def index(request):
-    questions = []
-    for i in range(1, 31):
-        questions.append({
-            'id': i,
-            'title': f'Вопрос {i}',
-            'text': f'Текст вопроса {i}...'
-        })
+    page = paginate(Question.objects.feed_new(), request, 5)
+    return render(request, "index.html", {"page_obj": page})
 
-    page = paginate(questions, request, per_page=5)
-
-    context = {
-        'page_obj': page,
-    }
-    return render(request, 'index.html', context)
-
+@require_safe
 def hot(request):
-    hot_questions = []
-    for i in range(1, 31):
-        hot_questions.append({
-            'id': i,
-            'title': f'Горячий вопрос {i}',
-            'text': f'Текст горячего вопроса {i}'
-        })
+    page = paginate(Question.objects.feed_hot(), request, 5)
+    return render(request, "hot.html", {"page_obj": page})
 
-    page = paginate(hot_questions, request, per_page=5)
-
-    context = {
-        'page_obj': page,
-    }
-    return render(request, 'hot.html', context)
-
+@require_safe
 def tag(request, tag_name):
-    tagged_questions = []
-    for i in range(1, 21):
-        tagged_questions.append({
-            'id': i,
-            'title': f'Вопрос с тегом {tag_name} #{i}',
-            'text': f'...'
-        })
+    if not Tag.objects.filter(name=tag_name).exists():
+        raise Http404
+    page = paginate(Question.objects.feed_by_tag(tag_name), request, 5)
+    return render(request, "tag.html", {"page_obj": page, "tag_name": tag_name})
 
-    page = paginate(tagged_questions, request, per_page=5)
-
-    context = {
-        'page_obj': page,
-        'tag_name': tag_name,
-    }
-    return render(request, 'tag.html', context)
-
-def question_detail(request, question_id):
-    question = {
-        'id': question_id,
-        'title': f'Детали вопроса {question_id}',
-        'text': 'Полное описание здесь',
-        'tags': ['Схема', 'Состав', 'События'],
-        'answers': [
-            {'id': 1, 'text': 'Ответ 1', 'is_correct': True},
-            {'id': 2, 'text': 'Ответ 2', 'is_correct': False},
-        ],
-    }
-    return render(request, 'question.html', {'question': question})
-
+@require_http_methods(["GET", "POST"])
 def login_view(request):
-    return render(request, 'login.html')
+    if request.user.is_authenticated:
+        return redirect(SAFE_REDIRECT)
 
+    form = LoginForm(request.POST or None)
+    if form.is_valid():
+        login(request, form.cleaned_data["user"])
+        cont = request.GET.get("continue", reverse(SAFE_REDIRECT))
+        if not url_has_allowed_host_and_scheme(cont, {request.get_host()}):
+            cont = reverse(SAFE_REDIRECT)
+        return redirect(cont)
+
+    return render(request, "login.html", {"form": form})
+
+
+@require_http_methods(["GET", "POST"])
 def signup_view(request):
-    return render(request, 'signup.html')
+    if request.user.is_authenticated:
+        return redirect(SAFE_REDIRECT)
 
+    form = SignupForm(request.POST or None, request.FILES or None)
+
+    if form.is_valid():
+        user = form.save()
+        login(request, user)
+        return redirect(SAFE_REDIRECT)
+
+    return render(request, "signup.html", {"form": form})
+
+@require_safe
+def logout_view(request):
+    logout(request)
+    nxt = request.GET.get("next")
+    if not url_has_allowed_host_and_scheme(nxt or "", {request.get_host()}):
+        nxt = request.META.get("HTTP_REFERER", reverse(SAFE_REDIRECT))
+    return redirect(nxt)
+
+@login_required(login_url="/login/")
+@require_http_methods(["GET", "POST"])
 def ask_view(request):
-    return render(request, 'ask.html')
+    form = AskForm(request.POST or None)
+    if form.is_valid():
+        question = form.save(author=request.user)
+        return redirect(question.get_absolute_url())
+    return render(request, "ask.html", {"form": form})
+
+@require_http_methods(["GET", "POST"])
+def question_detail(request, question_id):
+    question = get_object_or_404(Question.objects.full(), pk=question_id)
+    page = paginate(question.get_answers_queryset(), request, 5)
+
+    form = AnswerForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        if not request.user.is_authenticated:
+            return redirect(f"{reverse('login')}?continue={request.path}")
+        answer = question.add_answer(author=request.user, form=form)
+        return redirect(question.url_to_answer(answer, request))
+
+    return render(
+        request,
+        "question.html",
+        {"question": question, "page_obj": page, "answer_form": form},
+    )
+
+@login_required(login_url="/login/")
+@require_http_methods(["GET", "POST"])
+def profile_edit_view(request):
+    form = ProfileEditForm(
+        request.POST or None,
+        request.FILES or None,
+        instance=request.user.profile,
+        user=request.user,
+    )
+    if form.is_valid():
+        form.save()
+        return redirect(request.path)
+    return render(request, "profile_edit.html", {"form": form})

@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block title %}Вопрос #{{ question.id }}{% endblock %}
 
@@ -7,46 +7,89 @@
 <p>{{ question.text }}</p>
 
 <p>
-    {% for tag in question.tags %}
-        <span class="badge bg-info me-1">{{ tag }}</span>
+    {% for tag in question.tags.all %}
+        <span class="badge bg-info me-1">{{ tag.name }}</span>
     {% endfor %}
 </p>
 
 <hr>
 <h4>Ответы</h4>
-{% for ans in question.answers %}
-<div class="border p-3 mb-2">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <div>
-            <label>
-                <input type="checkbox" {% if ans.is_correct %}checked{% endif %} disabled>
-            </label>
-            <strong>Правильный ответ</strong>
+
+{% for ans in page_obj %}
+<div class="border p-3 mb-2 d-flex" id="answer{{ ans.id }}">
+
+    {# квадратный аватар 96×96 px с явным отступом вправо #}
+    {% if ans.author.profile.avatar %}
+        <img src="{{ ans.author.profile.avatar.url }}"
+             alt="avatar"
+             width="96" height="96"
+             style="margin-right:1.5rem;">
+    {% endif %}
+
+    <div style="flex:1">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+                <label>
+                    <input type="checkbox" {% if ans.is_correct %}checked{% endif %} disabled>
+                </label>
+                <strong>Правильный ответ</strong>
+            </div>
+            <div>
+                <button class="btn btn-outline-success btn-sm">+</button>
+                <span class="mx-1">{{ ans.likes.count }}</span>
+                <button class="btn btn-outline-danger btn-sm">−</button>
+            </div>
         </div>
-        <div>
-            <button class="btn btn-outline-success btn-sm">+</button>
-            <span class="mx-1">10</span>
-            <button class="btn btn-outline-danger btn-sm">−</button>
-        </div>
+
+        <p class="mb-1">{{ ans.text }}</p>
+        <small class="text-muted">
+            Автор: {{ ans.author.username }} |
+            {{ ans.created_at|date:"d.m.Y H:i" }}
+        </small>
     </div>
-    <p>{{ ans.text }}</p>
 </div>
 {% empty %}
 <p>Ответов пока нет.</p>
 {% endfor %}
 
+{% include "pagination.html" %}
+
 <hr>
-<h4>Ваш ответ</h4>
-{% if form.errors %}
-  <div class="alert alert-danger">Пожалуйста, исправьте ошибки в форме.</div>
+<h4 class="mt-4">Добавить ответ</h4>
+
+{% if user.is_authenticated %}
+  <div class="card shadow-sm mb-5">
+      <div class="card-body">
+          {% if answer_form.errors %}
+              <div class="alert alert-danger">
+                  Пожалуйста, исправьте ошибки в форме.
+              </div>
+          {% endif %}
+          <form method="post"
+                action="{% url 'question_detail' question.id %}#answer_form"
+                id="answer_form">
+              {% csrf_token %}
+              <div class="form-floating mb-3">
+                  {{ answer_form.text }}
+                  <label for="{{ answer_form.text.id_for_label }}">Ваш ответ</label>
+              </div>
+              {% for err in answer_form.text.errors %}
+                  <div class="invalid-feedback d-block">{{ err }}</div>
+              {% endfor %}
+              <div class="d-flex justify-content-end">
+                  <button class="btn btn-primary">
+                      <i class="bi bi-send-fill me-1"></i> Отправить
+                  </button>
+              </div>
+          </form>
+      </div>
+  </div>
+{% else %}
+  <p>
+      <a class="btn btn-outline-primary"
+         href="{% url 'login' %}?continue={{ request.get_full_path|urlencode }}">
+         Войдите, чтобы оставить ответ
+      </a>
+  </p>
 {% endif %}
-<form method="post" action="#">
-    {% csrf_token %}
-    <div class="mb-3">
-        <label>
-            <textarea class="form-control" name="answer" rows="3"></textarea>
-        </label>
-    </div>
-    <button class="btn btn-primary" type="submit">Отправить</button>
-</form>
 {% endblock %}
