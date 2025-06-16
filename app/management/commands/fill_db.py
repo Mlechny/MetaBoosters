@@ -80,7 +80,6 @@ class Command(BaseCommand):
             password = f"pass{i + 1}"
             user = User.objects.create_user(username=username, email=email, password=password)
 
-            # создаём профиль + аватар
             profile = Profile.objects.create(user=user)
             avatar_content = ContentFile(avatar_bytes, name="avatar.jpeg")
             profile.avatar.save("avatar.jpeg", avatar_content, save=True)
@@ -121,13 +120,11 @@ class Command(BaseCommand):
 
         num_likes_needed = ratio * 200
 
-        # Собираем все возможные пары user-вопрос и user-ответ (для уникальности)
         question_pairs = list(product(users, questions))
         answer_pairs = list(product(users, answers))
         all_pairs = [("question", user, obj) for user, obj in question_pairs] + \
                     [("answer", user, obj) for user, obj in answer_pairs]
 
-        # Если лайков нужно больше, чем уникальных пар — ограничиваем максимумом
         max_likes = len(all_pairs)
         if num_likes_needed > max_likes:
             self.stdout.write(self.style.WARNING(
@@ -135,7 +132,6 @@ class Command(BaseCommand):
             ))
             num_likes_needed = max_likes
 
-        # Перемешиваем пары и берём первые N
         random.shuffle(all_pairs)
         selected_pairs = all_pairs[:num_likes_needed]
 
